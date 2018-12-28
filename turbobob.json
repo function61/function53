@@ -1,0 +1,21 @@
+{
+	"for_description_of_this_file_see": "https://github.com/function61/turbobob",
+	"version_major": 1,
+	"project_name": "function53",
+	"builders": [
+		{
+			"name": "default",
+			"dockerfile_path": "build-default.Dockerfile",
+			"mount_source": "",
+			"mount_destination": "/go/src/github.com/function61/function53",
+			"dev_command": [
+				"bash"
+			],
+			"dev_ports": [],
+			"dev_pro_tips": [],
+			"pass_envs": ["BINTRAY_CREDS"],
+			"contextless_build": true
+		}
+	],
+	"docker_images": []
+}
