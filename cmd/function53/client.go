@@ -12,11 +12,6 @@ import (
 	"time"
 )
 
-// important links:
-//
-// 		https://github.com/artyom/dot
-// 		https://dnscrypt.info/public-servers/
-
 type Job struct {
 	Request  *dns.Msg
 	Response chan *dns.Msg
@@ -89,6 +84,7 @@ func NewClientPool(logger *log.Logger, stop *stopper.Stopper) *ClientConnectionP
 	return pool
 }
 
+// inspired by: https://github.com/artyom/dot
 func endpointWorker(endpoint ServerEndpoint, pool *ClientConnectionPool) {
 	reconnect := func(err error) {
 		pool.logl.Error.Printf("Endpoint %s failed: %v", endpoint.Addr, err)

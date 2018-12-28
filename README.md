@@ -41,3 +41,4 @@ Links
 -----
 
 - https://github.com/jedisct1/dnscrypt-proxy/wiki/Public-blacklists
+- https://dnscrypt.info/public-servers/
