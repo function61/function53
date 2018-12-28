@@ -29,16 +29,16 @@ And here's the alternatives' feature matrix:
 | coredns        |             | x             | x       | x               | x             | x             |
 | pihole         | x           | Manual config | x       |                 |               |               |
 
-Metrics for [dnscrypt-proxy](https://github.com/jedisct1/dnscrypt-proxy/issues/337) are probably never coming.
+Metrics for dnscrypt-proxy [may not ever be coming](https://github.com/jedisct1/dnscrypt-proxy/issues/337).
 
-I define clean install as minimal changes to the system. Pi-hole needs so many dependencies,
+I define "clean install" as minimal changes to the system. Pi-hole needs so many dependencies,
 and even the Docker image for Pi-hole looks too complicated.
 
 I also had [reliability problems with dnscrypt-proxy](https://github.com/coredns/coredns/issues/2267#issuecomment-450131975).
 
 
-How to run
-----------
+How to install
+--------------
 
 This assumes you're using Raspberry Pi. The URL is different for amd64.
 
@@ -60,3 +60,10 @@ Links
 
 - https://github.com/jedisct1/dnscrypt-proxy/wiki/Public-blacklists
 - https://dnscrypt.info/public-servers/
+
+
+How to build & develop
+----------------------
+
+[How to build & develop](https://github.com/function61/turbobob/blob/master/docs/external-how-to-build-and-dev.md)
+(with Turbo Bob, our build tool). It's easy and simple!
