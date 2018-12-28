@@ -1,5 +1,5 @@
 [![Build Status](https://img.shields.io/travis/function61/function53.svg?style=for-the-badge)](https://travis-ci.org/function61/function53)
-[![Download](https://img.shields.io/docker/pulls/fn61/function53.svg?style=for-the-badge)](https://hub.docker.com/r/fn61/function53/)
+[![Download](https://img.shields.io/bintray/v/function61/function53/main.svg?style=for-the-badge&label=Download)](https://bintray.com/function61/function53/main/_latestVersion#files)
 
 What
 ----
@@ -35,6 +35,24 @@ I define clean install as minimal changes to the system. Pi-hole needs so many d
 and even the Docker image for Pi-hole looks too complicated.
 
 I also had [reliability problems with dnscrypt-proxy](https://github.com/coredns/coredns/issues/2267#issuecomment-450131975).
+
+
+How to run
+----------
+
+This assumes you're using Raspberry Pi. The URL is different for amd64.
+
+```
+$ mkdir function53 && cd function53/
+$ VERSION_TO_DOWNLOAD="..." # find this from Bintray. Looks like: 20180828_1449_b9d7759cf80f0b4a
+$ sudo curl --location --fail --output function53 "https://dl.bintray.com/function61/function53/$VERSION_TO_DOWNLOAD/function53_linux-arm" && sudo chmod +x function53
+$ ./function53 write-systemd-unit-file
+Wrote unit file to /etc/systemd/system/function53.service
+Run to enable on boot & to start now:
+        $ systemctl enable function53
+        $ systemctl start function53
+        $ systemctl status function53
+```
 
 
 Links
