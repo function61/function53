@@ -11,33 +11,68 @@ import (
 )
 
 type DnsQueryHandler struct {
-	clientPool  *ClientConnectionPool
-	queryLogger QueryLogger
-	blocklist   Blocklist
-	metrics     *metrics
-	logl        *logex.Leveled
+	ReloadBlocklist chan Blocklist
+	clientPool      *ClientConnectionPool
+	queryLogger     QueryLogger
+	blocklist       Blocklist
+	blocklistMu     sync.Mutex
+	metrics         *metrics
+	logl            *logex.Leveled
 }
 
-func NewDnsQueryHandler(clientPool *ClientConnectionPool, blocklist Blocklist, logger *log.Logger, queryLogger QueryLogger) *DnsQueryHandler {
-	return &DnsQueryHandler{
-		clientPool:  clientPool,
-		blocklist:   blocklist,
-		queryLogger: queryLogger,
-		metrics:     makeMetrics(),
-		logl:        logex.Levels(logger),
+func NewDnsQueryHandler(
+	clientPool *ClientConnectionPool,
+	blocklist Blocklist,
+	logger *log.Logger,
+	queryLogger QueryLogger,
+	stop *stopper.Stopper,
+) *DnsQueryHandler {
+	qh := &DnsQueryHandler{
+		ReloadBlocklist: make(chan Blocklist, 1),
+		clientPool:      clientPool,
+		queryLogger:     queryLogger,
+		metrics:         makeMetrics(),
+		logl:            logex.Levels(logger),
 	}
+
+	// to get trigger metrics set
+	qh.replaceBlocklist(blocklist)
+
+	go func() {
+		defer stop.Done()
+
+		for {
+			select {
+			case <-stop.Signal:
+				return
+			case blocklist := <-qh.ReloadBlocklist:
+				qh.replaceBlocklist(blocklist)
+			}
+		}
+	}()
+
+	return qh
 }
 
-// we don't have to support len(req.Question) > 1:
-// https://serverfault.com/questions/742785/multi-query-multiple-dns-record-types-at-once
 func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 	started := time.Now()
 
+	// we don't have to support len(req.Question) > 1:
+	// https://serverfault.com/questions/742785/multi-query-multiple-dns-record-types-at-once
+	if len(req.Question) != 1 {
+		// don't bother sending a message, even handleRejection() code
+		// doesn't work if len() == 0
+		h.logl.Error.Printf("request dropped: question count != 1")
+		return
+	}
+
+	h.blocklistMu.Lock()
+	blocklisted := h.blocklist.Has(req.Question[0].Name)
+	h.blocklistMu.Unlock()
+
 	h.queryLogger.LogQuery(req.Question[0].Name, rw.RemoteAddr().String())
 
-	h.metrics.requestCount.Inc()
-
-	if h.blocklist.Has(req.Question[0].Name) {
+	if blocklisted {
 		h.metrics.requestBlacklisted.Inc()
 		h.handleRejection(rw, req)
 	} else {
@@ -51,6 +86,7 @@ func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 		}
 	}
 
+	h.metrics.requestCount.Inc()
 	h.metrics.requestDuration.Observe(time.Since(started).Seconds())
 }
 
@@ -75,6 +111,16 @@ func (h *DnsQueryHandler) handleRejection(rw dns.ResponseWriter, req *dns.Msg) {
 	if err := rw.WriteMsg(msg); err != nil {
 		h.logl.Error.Printf("Error writing message: %v", err)
 	}
+}
+
+func (h *DnsQueryHandler) replaceBlocklist(blocklist Blocklist) {
+	h.blocklistMu.Lock()
+	defer h.blocklistMu.Unlock()
+
+	h.blocklist = blocklist
+	h.metrics.blocklistItems.Set(float64(len(blocklist)))
+
+	h.logl.Info.Printf("Got blocklist with %d item(s)", len(blocklist))
 }
 
 func runServer(handler *DnsQueryHandler, stop *stopper.Stopper) error {

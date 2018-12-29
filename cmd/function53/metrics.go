@@ -12,6 +12,7 @@ type metrics struct {
 	requestAccepted    prometheus.Counter
 	requestBlacklisted prometheus.Counter
 	requestDuration    prometheus.Histogram
+	blocklistItems     prometheus.Gauge
 }
 
 func makeMetrics() *metrics {
@@ -36,6 +37,10 @@ func makeMetrics() *metrics {
 			Buckets: timeBuckets,
 			Help:    "Histogram of the time (in seconds) each request took.",
 		}),
+		blocklistItems: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "blocklist_items",
+			Help: "Number of items in the blocklist",
+		}),
 	}
 
 	// TODO: write test to guarantee that this is in sync with the struct?
@@ -44,6 +49,7 @@ func makeMetrics() *metrics {
 		metrics.requestAccepted,
 		metrics.requestBlacklisted,
 		metrics.requestDuration,
+		metrics.blocklistItems,
 	}
 
 	for _, collector := range allCollectors {

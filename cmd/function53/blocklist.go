@@ -76,7 +76,9 @@ func blocklistExists() (bool, error) {
 	return fileexists.Exists(blocklistFilename)
 }
 
+// atomically (temp-file + rename) updates a blocklist to disk
 // https://github.com/jedisct1/dnscrypt-proxy/wiki/Public-blacklists
+// "Updated daily"
 func blocklistUpdate() error {
 	ctx, cancel := context.WithTimeout(context.TODO(), ezhttp.DefaultTimeout10s)
 	defer cancel()

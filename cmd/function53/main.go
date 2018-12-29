@@ -55,13 +55,16 @@ func mainInternal() {
 
 	workers := stopper.NewManager()
 
-	clientPool := NewClientPool(logex.Prefix("clientPool", rootLogger), workers.Stopper())
+	clientPool := NewClientPool(
+		logex.Prefix("clientPool", rootLogger),
+		workers.Stopper())
 
 	dnsHandler := NewDnsQueryHandler(
 		clientPool,
 		*blocklist,
 		logex.Prefix("queryHandler", rootLogger),
-		queryLogger)
+		queryLogger,
+		workers.Stopper())
 
 	go func(stop *stopper.Stopper) {
 		if err := runServer(dnsHandler, stop); err != nil {
@@ -74,6 +77,11 @@ func mainInternal() {
 			logl.Error.Fatalf("metricsServer: %v", err)
 		}
 	}(workers.Stopper())
+
+	go blocklistUpdateScheduler(
+		logex.Prefix("blocklistUpdateScheduler", rootLogger),
+		dnsHandler.ReloadBlocklist,
+		workers.Stopper())
 
 	logl.Info.Printf("Started %s", dynversion.Version)
 	logl.Info.Printf("Got %s; stopping", <-ossignal.InterruptOrTerminate())
