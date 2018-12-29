@@ -73,7 +73,7 @@ func (h *DnsQueryHandler) handleRejection(rw dns.ResponseWriter, req *dns.Msg) {
 	}}
 
 	if err := rw.WriteMsg(msg); err != nil {
-		// debugMsg("Error writing message: ", err)
+		h.logl.Error.Printf("Error writing message: %v", err)
 	}
 }
 
