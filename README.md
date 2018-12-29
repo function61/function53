@@ -46,6 +46,11 @@ This assumes you're using Raspberry Pi. The URL is different for amd64.
 $ mkdir ~/function53 && cd ~/function53/
 $ VERSION_TO_DOWNLOAD="..." # find this from Bintray. Looks like: 20180828_1449_b9d7759cf80f0b4a
 $ sudo curl --location --fail --output function53 "https://dl.bintray.com/function61/function53/$VERSION_TO_DOWNLOAD/function53_linux-arm" && sudo chmod +x function53
+$ ./function53 write-default-config
+$ cat config.json
+
+... inspect the configuration to see if it suits you
+
 $ ./function53 write-systemd-unit-file
 Wrote unit file to /etc/systemd/system/function53.service
 Run to enable on boot & to start now:
@@ -55,6 +60,16 @@ Run to enable on boot & to start now:
 ```
 
 NOTE: You may need `$ sudo` for some of those commands.
+
+After starting function53, check with `$ dig` or `$ nslookup` (nslookup works the same on
+Windows if you like it better) that the name resolution works:
+
+```
+$ nslookup joonas.fi <ip of your DNS server>
+$ dig joonas.fi @<ip of your DNS server>
+```
+
+To test ad blocking, lookup `adtech.de`.
 
 
 Links

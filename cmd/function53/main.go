@@ -29,6 +29,7 @@ func main() {
 		},
 	})
 	app.AddCommand(writeSystemdFileEntry())
+	app.AddCommand(writeDefaultConfigEntry())
 
 	if err := app.Execute(); err != nil {
 		fmt.Println(err)
@@ -40,6 +41,11 @@ func mainInternal() {
 	rootLogger := logex.StandardLogger()
 
 	logl := logex.Levels(logex.Prefix("main", rootLogger))
+
+	conf, err := readConfig()
+	if err != nil {
+		logl.Error.Fatalf("readConfig: %v", err)
+	}
 
 	blocklist, err := loadBlocklistAndDownloadIfRequired(logl)
 	if err != nil {
@@ -56,6 +62,7 @@ func mainInternal() {
 	workers := stopper.NewManager()
 
 	clientPool := NewClientPool(
+		conf.Endpoints,
 		logex.Prefix("clientPool", rootLogger),
 		workers.Stopper())
 
@@ -73,7 +80,7 @@ func mainInternal() {
 	}(workers.Stopper())
 
 	go func(stop *stopper.Stopper) {
-		if err := metricsServer(stop); err != nil {
+		if err := metricsServer(*conf, logex.Prefix("metricsServer", rootLogger), stop); err != nil {
 			logl.Error.Fatalf("metricsServer: %v", err)
 		}
 	}(workers.Stopper())

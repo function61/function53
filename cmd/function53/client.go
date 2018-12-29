@@ -36,25 +36,15 @@ type ClientConnectionPool struct {
 	logl                  *logex.Leveled
 }
 
-func NewClientPool(logger *log.Logger, stop *stopper.Stopper) *ClientConnectionPool {
-	initialEndpoints := []ServerEndpoint{
-		// 60 second inactivity timeout (not even TCP keepalive fixes this)
-		// {"dns.google", "8.8.8.8:853"},
-		// {"dns.google", "8.8.4.4:853"},
-
-		// 10 second inactivity timeout (not even TCP keepalive fixes this)
-		{"cloudflare-dns.com", "1.1.1.1:853"},
-		{"cloudflare-dns.com", "1.0.0.1:853"},
-	}
-
+func NewClientPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stopper.Stopper) *ClientConnectionPool {
 	pool := &ClientConnectionPool{
 		Jobs:                  make(chan *Job, 16),
-		Reconnect:             make(chan ServerEndpoint, len(initialEndpoints)),
+		Reconnect:             make(chan ServerEndpoint, len(endpoints)),
 		tlsClientSessionCache: tls.NewLRUClientSessionCache(0),
 		logl:                  logex.Levels(logger),
 	}
 
-	for _, endpoint := range initialEndpoints {
+	for _, endpoint := range endpoints {
 		pool.Reconnect <- endpoint
 	}
 

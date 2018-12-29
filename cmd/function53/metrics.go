@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"github.com/function61/gokit/logex"
 	"github.com/function61/gokit/stopper"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
 	"net/http"
 )
 
@@ -59,15 +62,22 @@ func makeMetrics() *metrics {
 	return metrics
 }
 
-func metricsServer(stop *stopper.Stopper) error {
+func metricsServer(conf Config, logger *log.Logger, stop *stopper.Stopper) error {
 	http.Handle("/metrics", promhttp.Handler())
 
+	logl := logex.Levels(logger)
+
+	addr := fmt.Sprintf(":%d", conf.MetricsPort)
+
 	srv := http.Server{
-		Addr: ":80",
+		Addr: addr,
 	}
+
+	logl.Info.Printf("starting to listen at %s", addr)
 
 	go func() {
 		defer stop.Done()
+		defer logl.Info.Println("stopped")
 
 		<-stop.Signal
 
