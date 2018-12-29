@@ -11,11 +11,12 @@ import (
 )
 
 type metrics struct {
-	requestCount       prometheus.Counter
-	requestAccepted    prometheus.Counter
-	requestBlacklisted prometheus.Counter
-	requestDuration    prometheus.Histogram
-	blocklistItems     prometheus.Gauge
+	requestCount            prometheus.Counter
+	requestAccepted         prometheus.Counter
+	requestBlocklisted      prometheus.Counter
+	requestRejectedByClient prometheus.Counter
+	requestDuration         prometheus.Histogram
+	blocklistItems          prometheus.Gauge
 }
 
 func makeMetrics() *metrics {
@@ -25,15 +26,19 @@ func makeMetrics() *metrics {
 	metrics := &metrics{
 		requestCount: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "request_count_total",
-			Help: "Total requests",
+			Help: "Total requests (accepted + rejected by client + blocklisted)",
 		}),
 		requestAccepted: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "request_count_accepted",
-			Help: "Accepted (non-blacklisted) requests",
+			Help: "Accepted requests",
 		}),
-		requestBlacklisted: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "request_count_blacklisted",
-			Help: "Blacklisted requests",
+		requestRejectedByClient: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "request_rejected_by_client",
+			Help: "Requests made by clients that are not allowed to do DNS queries",
+		}),
+		requestBlocklisted: prometheus.NewCounter(prometheus.CounterOpts{
+			Name: "request_count_blocklisted",
+			Help: "Blocklisted requests (ads/malware etc.)",
 		}),
 		requestDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Name:    "request_duration_seconds",
@@ -50,7 +55,8 @@ func makeMetrics() *metrics {
 	allCollectors := []prometheus.Collector{
 		metrics.requestCount,
 		metrics.requestAccepted,
-		metrics.requestBlacklisted,
+		metrics.requestRejectedByClient,
+		metrics.requestBlocklisted,
 		metrics.requestDuration,
 		metrics.blocklistItems,
 	}

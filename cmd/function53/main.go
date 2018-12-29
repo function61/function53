@@ -53,7 +53,7 @@ func mainInternal() {
 	}
 
 	var queryLogger QueryLogger
-	if true {
+	if conf.LogQueries {
 		queryLogger = NewLogQueryLogger(logex.Prefix("queryLogger", rootLogger))
 	} else {
 		queryLogger = NewNilQueryLogger()
@@ -68,6 +68,7 @@ func mainInternal() {
 
 	dnsHandler := NewDnsQueryHandler(
 		clientPool,
+		*conf,
 		*blocklist,
 		logex.Prefix("queryHandler", rootLogger),
 		queryLogger,

@@ -6,12 +6,14 @@ import (
 	"github.com/function61/gokit/stopper"
 	"github.com/miekg/dns"
 	"log"
+	"net"
 	"sync"
 	"time"
 )
 
 type DnsQueryHandler struct {
 	ReloadBlocklist chan Blocklist
+	conf            Config
 	clientPool      *ClientConnectionPool
 	queryLogger     QueryLogger
 	blocklist       Blocklist
@@ -22,6 +24,7 @@ type DnsQueryHandler struct {
 
 func NewDnsQueryHandler(
 	clientPool *ClientConnectionPool,
+	conf Config,
 	blocklist Blocklist,
 	logger *log.Logger,
 	queryLogger QueryLogger,
@@ -29,13 +32,14 @@ func NewDnsQueryHandler(
 ) *DnsQueryHandler {
 	qh := &DnsQueryHandler{
 		ReloadBlocklist: make(chan Blocklist, 1),
+		conf:            conf,
 		clientPool:      clientPool,
 		queryLogger:     queryLogger,
 		metrics:         makeMetrics(),
 		logl:            logex.Levels(logger),
 	}
 
-	// to get trigger metrics set
+	// to trigger metrics calculation
 	qh.replaceBlocklist(blocklist)
 
 	go func() {
@@ -70,12 +74,20 @@ func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 	blocklisted := h.blocklist.Has(req.Question[0].Name)
 	h.blocklistMu.Unlock()
 
-	h.queryLogger.LogQuery(req.Question[0].Name, rw.RemoteAddr().String())
+	remoteIp := ipFromAddr(rw.RemoteAddr())
 
-	if blocklisted {
-		h.metrics.requestBlacklisted.Inc()
+	reqStatusForLogging := ""
+
+	if h.conf.RejectQueriesByClientAddr[remoteIp] {
+		reqStatusForLogging = "REJECTED BY CLIENT"
+		h.metrics.requestRejectedByClient.Inc()
+		h.handleRejection(rw, req)
+	} else if blocklisted {
+		reqStatusForLogging = "BLOCKLISTED"
+		h.metrics.requestBlocklisted.Inc()
 		h.handleRejection(rw, req)
 	} else {
+		reqStatusForLogging = "OK"
 		h.metrics.requestAccepted.Inc()
 		job := NewJob(req)
 		h.clientPool.Jobs <- job
@@ -85,6 +97,8 @@ func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 			h.logl.Error.Printf("request dropped, error writing to client: %v", err)
 		}
 	}
+
+	h.queryLogger.LogQuery(req.Question[0].Name, reqStatusForLogging, remoteIp)
 
 	h.metrics.requestCount.Inc()
 	h.metrics.requestDuration.Observe(time.Since(started).Seconds())
@@ -175,5 +189,16 @@ func runServer(handler *DnsQueryHandler, stop *stopper.Stopper) error {
 func listenAndServeDns(ds *dns.Server, serverErrored func(error)) {
 	if err := ds.ListenAndServe(); err != nil {
 		serverErrored(fmt.Errorf("Start %s listener on %s failed: %v", ds.Net, ds.Addr, err))
+	}
+}
+
+func ipFromAddr(addr net.Addr) string {
+	switch addr := addr.(type) {
+	case *net.UDPAddr:
+		return addr.IP.String()
+	case *net.TCPAddr:
+		return addr.IP.String()
+	default:
+		panic("unexpected addr type")
 	}
 }

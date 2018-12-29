@@ -10,8 +10,10 @@ const (
 )
 
 type Config struct {
-	MetricsPort int              `json:"metrics_port"`
-	Endpoints   []ServerEndpoint `json:"endpoints"`
+	MetricsPort               int              `json:"metrics_port"`
+	Endpoints                 []ServerEndpoint `json:"endpoints"`
+	LogQueries                bool             `json:"log_queries"`
+	RejectQueriesByClientAddr map[string]bool  `json:"reject_queries_by_client_addr"`
 }
 
 func defaultConfig() Config {
@@ -26,6 +28,8 @@ func defaultConfig() Config {
 			{"cloudflare-dns.com", "1.1.1.1:853"},
 			{"cloudflare-dns.com", "1.0.0.1:853"},
 		},
+		LogQueries:                true,
+		RejectQueriesByClientAddr: map[string]bool{},
 	}
 }
 
