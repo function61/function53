@@ -132,25 +132,21 @@ func runServer(handler *DnsQueryHandler, stop *stopper.Stopper) error {
 	udpHandler.HandleFunc(".", handler.Handle)
 
 	tcpServer := &dns.Server{
-		Addr:    "0.0.0.0:53",
-		Net:     "tcp",
-		Handler: tcpHandler,
-		// ReadTimeout:  2 * time.Second, // FIXME: incorrect?
-		ReadTimeout:  0,
-		WriteTimeout: 0,
+		Addr:         "0.0.0.0:53",
+		Net:          "tcp",
+		Handler:      tcpHandler,
+		ReadTimeout:  2 * time.Second,
+		WriteTimeout: 2 * time.Second,
 	}
-	// WriteTimeout: 2 * time.Second}
 
 	udpServer := &dns.Server{
-		Addr:    "0.0.0.0:53",
-		Net:     "udp",
-		Handler: udpHandler,
-		UDPSize: 65535,
-		// ReadTimeout:  2 * time.Second, // FIXME: incorrect?
-		ReadTimeout:  0,
-		WriteTimeout: 0,
+		Addr:         "0.0.0.0:53",
+		Net:          "udp",
+		Handler:      udpHandler,
+		UDPSize:      65535,
+		ReadTimeout:  2 * time.Second,
+		WriteTimeout: 2 * time.Second,
 	}
-	// WriteTimeout: 2 * time.Second}
 
 	serverErrored := make(chan error, 1)
 
