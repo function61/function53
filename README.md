@@ -43,7 +43,7 @@ How to install
 This assumes you're using Raspberry Pi. The URL is different for amd64.
 
 ```
-$ mkdir function53 && cd function53/
+$ mkdir ~/function53 && cd ~/function53/
 $ VERSION_TO_DOWNLOAD="..." # find this from Bintray. Looks like: 20180828_1449_b9d7759cf80f0b4a
 $ sudo curl --location --fail --output function53 "https://dl.bintray.com/function61/function53/$VERSION_TO_DOWNLOAD/function53_linux-arm" && sudo chmod +x function53
 $ ./function53 write-systemd-unit-file
@@ -53,6 +53,8 @@ Run to enable on boot & to start now:
         $ systemctl start function53
         $ systemctl status function53
 ```
+
+NOTE: You may need `$ sudo` for some of those commands.
 
 
 Links
