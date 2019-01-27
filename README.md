@@ -8,6 +8,8 @@ A DNS server for your LAN that blocks ads/malware and encrypts your DNS traffic.
 
 Designed to work on Raspberry Pi (much like Pi-hole), but works elsewhere as well.
 
+![](docs/metrics.png)
+
 
 Why
 ---
