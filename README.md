@@ -1,5 +1,5 @@
 [![Build Status](https://img.shields.io/travis/function61/function53.svg?style=for-the-badge)](https://travis-ci.org/function61/function53)
-[![Download](https://img.shields.io/bintray/v/function61/function53/main.svg?style=for-the-badge&label=Download)](https://bintray.com/function61/function53/main/_latestVersion#files)
+[![Download](https://img.shields.io/bintray/v/function61/dl/function53.svg?style=for-the-badge&label=Download)](https://bintray.com/function61/dl/function53/_latestVersion#files)
 
 What
 ----
@@ -47,7 +47,7 @@ This assumes you're using Raspberry Pi. The URL is different for amd64.
 ```
 $ mkdir ~/function53 && cd ~/function53/
 $ VERSION_TO_DOWNLOAD="..." # find this from Bintray. Looks like: 20180828_1449_b9d7759cf80f0b4a
-$ sudo curl --location --fail --output function53 "https://dl.bintray.com/function61/function53/$VERSION_TO_DOWNLOAD/function53_linux-arm" && sudo chmod +x function53
+$ sudo curl --location --fail --output function53 "https://dl.bintray.com/function61/dl/function53/$VERSION_TO_DOWNLOAD/function53_linux-arm" && sudo chmod +x function53
 $ ./function53 write-default-config
 $ cat config.json
 
