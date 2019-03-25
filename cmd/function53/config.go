@@ -12,13 +12,15 @@ const (
 type Config struct {
 	MetricsPort               int              `json:"metrics_port"`
 	Endpoints                 []ServerEndpoint `json:"endpoints"`
+	BlocklistEnableUpdates    bool             `json:"blocklisting_enable_updates"`
 	LogQueries                bool             `json:"log_queries"`
 	RejectQueriesByClientAddr map[string]bool  `json:"reject_queries_by_client_addr"`
 }
 
 func defaultConfig() Config {
 	return Config{
-		MetricsPort: 9094,
+		MetricsPort:            9094,
+		BlocklistEnableUpdates: true,
 		Endpoints: []ServerEndpoint{
 			// 60 second inactivity timeout (not even TCP keepalive fixes this)
 			// {"dns.google", "8.8.8.8:853"},

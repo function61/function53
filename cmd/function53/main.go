@@ -86,10 +86,12 @@ func mainInternal() {
 		}
 	}(workers.Stopper())
 
-	go blocklistUpdateScheduler(
-		logex.Prefix("blocklistUpdateScheduler", rootLogger),
-		dnsHandler.ReloadBlocklist,
-		workers.Stopper())
+	if conf.BlocklistEnableUpdates {
+		go blocklistUpdateScheduler(
+			logex.Prefix("blocklistUpdateScheduler", rootLogger),
+			dnsHandler.ReloadBlocklist,
+			workers.Stopper())
+	}
 
 	logl.Info.Printf("Started %s", dynversion.Version)
 	logl.Info.Printf("Got %s; stopping", <-ossignal.InterruptOrTerminate())
