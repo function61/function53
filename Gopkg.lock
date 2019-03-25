@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7242bc562917b9557f87db462cbd08c8515dd1b3f32e94c045950887a5b44c92"
+  digest = "1:df60b319cdde4843175fae758bdaf15a97ebd41a970f59728dfc12b68b4ac867"
   name = "github.com/function61/gokit"
   packages = [
     "assert",
@@ -23,10 +23,11 @@
     "ossignal",
     "stopper",
     "systemdinstaller",
+    "tcpkeepalive",
     "throttle",
   ]
   pruneopts = "UT"
-  revision = "3a533055d5a30f15426536a5024e41da9881253d"
+  revision = "bb2ee0025ab51857d08f8387ff7f6da822c5e40a"
 
 [[projects]]
   digest = "1:97df918963298c287643883209a2c3f642e6593379f97ab400c2a2e219ab647d"
@@ -167,6 +168,7 @@
     "github.com/function61/gokit/ossignal",
     "github.com/function61/gokit/stopper",
     "github.com/function61/gokit/systemdinstaller",
+    "github.com/function61/gokit/tcpkeepalive",
     "github.com/function61/gokit/throttle",
     "github.com/miekg/dns",
     "github.com/prometheus/client_golang/prometheus",

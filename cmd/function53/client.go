@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"github.com/function61/gokit/logex"
 	"github.com/function61/gokit/stopper"
+	"github.com/function61/gokit/tcpkeepalive"
 	"github.com/function61/gokit/throttle"
 	"github.com/miekg/dns"
 	"log"
@@ -89,9 +90,9 @@ func endpointWorker(endpoint ServerEndpoint, pool *ClientConnectionPool) {
 		return
 	}
 
-	// TODO: check for errors
-	tcpConn.(*net.TCPConn).SetKeepAlive(true)
-	tcpConn.(*net.TCPConn).SetKeepAlivePeriod(1 * time.Second)
+	if err := tcpkeepalive.Enable(tcpConn.(*net.TCPConn), 1*time.Second); err != nil {
+		pool.logl.Error.Printf("tcpkeepalive: %v", err)
+	}
 
 	tlsConn := tls.Client(tcpConn, &tls.Config{
 		ServerName:         endpoint.ServerName,
