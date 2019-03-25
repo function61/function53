@@ -10,6 +10,7 @@
 			"mount_destination": "/go/src/github.com/function61/function53",
 			"workdir": "/go/src/github.com/function61/function53",
 			"commands": {
+				"build": ["bin/build.sh"],
 				"dev": ["bash"]
 			}
 		},
