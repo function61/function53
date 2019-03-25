@@ -30,15 +30,17 @@ type ServerEndpoint struct {
 	Addr       string
 }
 
-type ClientConnectionPool struct {
+// forwards requests (in encrypted form) to DNS server endpoints which will actually
+// do the job of answering our queries
+type ForwarderPool struct {
 	Jobs                  chan *Job
 	Reconnect             chan ServerEndpoint
 	tlsClientSessionCache tls.ClientSessionCache
 	logl                  *logex.Leveled
 }
 
-func NewClientPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stopper.Stopper) *ClientConnectionPool {
-	pool := &ClientConnectionPool{
+func NewForwarderPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stopper.Stopper) *ForwarderPool {
+	pool := &ForwarderPool{
 		Jobs:                  make(chan *Job, 16),
 		Reconnect:             make(chan ServerEndpoint, len(endpoints)),
 		tlsClientSessionCache: tls.NewLRUClientSessionCache(0),
@@ -76,7 +78,7 @@ func NewClientPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stopper
 }
 
 // inspired by: https://github.com/artyom/dot
-func endpointWorker(endpoint ServerEndpoint, pool *ClientConnectionPool) {
+func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
 	reconnect := func(err error) {
 		pool.logl.Error.Printf("Endpoint %s failed: %v", endpoint.Addr, err)
 

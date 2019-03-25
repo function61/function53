@@ -61,13 +61,13 @@ func mainInternal() {
 
 	workers := stopper.NewManager()
 
-	clientPool := NewClientPool(
+	forwarderPool := NewForwarderPool(
 		conf.Endpoints,
-		logex.Prefix("clientPool", rootLogger),
+		logex.Prefix("forwarderPool", rootLogger),
 		workers.Stopper())
 
 	dnsHandler := NewDnsQueryHandler(
-		clientPool,
+		forwarderPool,
 		*conf,
 		*blocklist,
 		logex.Prefix("queryHandler", rootLogger),

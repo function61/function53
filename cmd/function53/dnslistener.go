@@ -14,7 +14,7 @@ import (
 type DnsQueryHandler struct {
 	ReloadBlocklist chan Blocklist
 	conf            Config
-	clientPool      *ClientConnectionPool
+	forwarderPool   *ForwarderPool
 	queryLogger     QueryLogger
 	blocklist       Blocklist
 	blocklistMu     sync.Mutex
@@ -23,7 +23,7 @@ type DnsQueryHandler struct {
 }
 
 func NewDnsQueryHandler(
-	clientPool *ClientConnectionPool,
+	forwarderPool *ForwarderPool,
 	conf Config,
 	blocklist Blocklist,
 	logger *log.Logger,
@@ -33,7 +33,7 @@ func NewDnsQueryHandler(
 	qh := &DnsQueryHandler{
 		ReloadBlocklist: make(chan Blocklist, 1),
 		conf:            conf,
-		clientPool:      clientPool,
+		forwarderPool:   forwarderPool,
 		queryLogger:     queryLogger,
 		metrics:         makeMetrics(),
 		logl:            logex.Levels(logger),
@@ -90,7 +90,7 @@ func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 		reqStatusForLogging = "OK"
 		h.metrics.requestAccepted.Inc()
 		job := NewJob(req)
-		h.clientPool.Jobs <- job
+		h.forwarderPool.Jobs <- job
 		resp := <-job.Response
 
 		if err := rw.WriteMsg(resp); err != nil {
