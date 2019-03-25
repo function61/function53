@@ -5,17 +5,21 @@
 	"builders": [
 		{
 			"name": "default",
-			"dockerfile_path": "build-default.Dockerfile",
+			"uses": "docker://fn61/buildkit-golang:20190316_0913_96b56b86",
 			"mount_source": "",
 			"mount_destination": "/go/src/github.com/function61/function53",
-			"dev_command": [
-				"bash"
-			],
+			"workdir": "/go/src/github.com/function61/function53",
+			"commands": {
+				"dev": ["bash"]
+			},
 			"dev_ports": [],
 			"dev_pro_tips": [],
-			"pass_envs": ["BINTRAY_CREDS"],
-			"contextless_build": true
+			"pass_envs": ["BINTRAY_CREDS"]
 		}
 	],
-	"docker_images": []
+	"docker_images": [],
+	"os_arches": {
+		"linux-amd64": true,
+		"linux-arm": true
+	}
 }
