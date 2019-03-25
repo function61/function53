@@ -78,11 +78,16 @@ func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 
 	reqStatusForLogging := ""
 
-	if h.conf.RejectQueriesByClientAddr[remoteIp] {
+	perClientConf, found := h.conf.OverridesByClientAddr[remoteIp]
+	if !found {
+		perClientConf = h.conf.DefaultOverridableConfig
+	}
+
+	if perClientConf.RejectAllQueries {
 		reqStatusForLogging = "REJECTED BY CLIENT"
 		h.metrics.requestRejectedByClient.Inc()
 		h.handleRejection(rw, req)
-	} else if blocklisted && h.conf.BlocklistingEnable {
+	} else if blocklisted && !perClientConf.DisableBlocklisting {
 		reqStatusForLogging = "BLOCKLISTED"
 		h.metrics.requestBlocklisted.Inc()
 		h.handleRejection(rw, req)

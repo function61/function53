@@ -10,18 +10,22 @@ const (
 )
 
 type Config struct {
-	MetricsPort               int              `json:"metrics_port"`
-	Endpoints                 []ServerEndpoint `json:"endpoints"`
-	BlocklistingEnable        bool             `json:"blocklisting_enable"`
-	BlocklistEnableUpdates    bool             `json:"blocklisting_enable_updates"`
-	LogQueries                bool             `json:"log_queries"`
-	RejectQueriesByClientAddr map[string]bool  `json:"reject_queries_by_client_addr"`
+	MetricsPort              int                           `json:"metrics_port"`
+	Endpoints                []ServerEndpoint              `json:"endpoints"`
+	BlocklistEnableUpdates   bool                          `json:"blocklisting_enable_updates"`
+	LogQueries               bool                          `json:"log_queries"`
+	DefaultOverridableConfig *OverridableConfig            `json:"default_overridable_config"`
+	OverridesByClientAddr    map[string]*OverridableConfig `json:"overrides_by_client_addr"`
+}
+
+type OverridableConfig struct {
+	RejectAllQueries    bool `json:"reject_all_queries"`
+	DisableBlocklisting bool `json:"disable_blocklisting"`
 }
 
 func defaultConfig() Config {
 	return Config{
 		MetricsPort:            9094,
-		BlocklistingEnable:     true,
 		BlocklistEnableUpdates: true,
 		Endpoints: []ServerEndpoint{
 			// 60 second inactivity timeout (not even TCP keepalive fixes this)
@@ -32,8 +36,11 @@ func defaultConfig() Config {
 			{"cloudflare-dns.com", "1.1.1.1:853"},
 			{"cloudflare-dns.com", "1.0.0.1:853"},
 		},
-		LogQueries:                true,
-		RejectQueriesByClientAddr: map[string]bool{},
+		LogQueries: true,
+
+		DefaultOverridableConfig: &OverridableConfig{},
+
+		OverridesByClientAddr: map[string]*OverridableConfig{},
 	}
 }
 
