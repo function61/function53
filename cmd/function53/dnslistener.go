@@ -82,7 +82,7 @@ func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {
 		reqStatusForLogging = "REJECTED BY CLIENT"
 		h.metrics.requestRejectedByClient.Inc()
 		h.handleRejection(rw, req)
-	} else if blocklisted {
+	} else if blocklisted && h.conf.BlocklistingEnable {
 		reqStatusForLogging = "BLOCKLISTED"
 		h.metrics.requestBlocklisted.Inc()
 		h.handleRejection(rw, req)

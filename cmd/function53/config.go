@@ -12,6 +12,7 @@ const (
 type Config struct {
 	MetricsPort               int              `json:"metrics_port"`
 	Endpoints                 []ServerEndpoint `json:"endpoints"`
+	BlocklistingEnable        bool             `json:"blocklisting_enable"`
 	BlocklistEnableUpdates    bool             `json:"blocklisting_enable_updates"`
 	LogQueries                bool             `json:"log_queries"`
 	RejectQueriesByClientAddr map[string]bool  `json:"reject_queries_by_client_addr"`
@@ -20,6 +21,7 @@ type Config struct {
 func defaultConfig() Config {
 	return Config{
 		MetricsPort:            9094,
+		BlocklistingEnable:     true,
 		BlocklistEnableUpdates: true,
 		Endpoints: []ServerEndpoint{
 			// 60 second inactivity timeout (not even TCP keepalive fixes this)
