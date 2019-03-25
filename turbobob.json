@@ -11,10 +11,22 @@
 			"workdir": "/go/src/github.com/function61/function53",
 			"commands": {
 				"dev": ["bash"]
+			}
+		},
+		{
+			"name": "publisher",
+			"uses": "docker://fn61/buildkit-publisher:20190206_1058_d35b3939",
+			"mount_destination": "/workspace",
+			"commands": {
+				"publish": ["publish.sh", "rel/*"],
+				"dev": ["bash"]
 			},
-			"dev_ports": [],
-			"dev_pro_tips": [],
-			"pass_envs": ["BINTRAY_CREDS"]
+			"env": {
+				"BINTRAY_PROJECT": "function61/dl/function53"
+			},
+			"pass_envs": [
+				"BINTRAY_CREDS"
+			]
 		}
 	],
 	"docker_images": [],
