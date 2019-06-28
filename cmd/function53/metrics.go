@@ -25,28 +25,28 @@ func makeMetrics() *metrics {
 
 	metrics := &metrics{
 		requestCount: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "request_count_total",
+			Name: "fn53_reqs_total",
 			Help: "Total requests (accepted + rejected by client + blocklisted)",
 		}),
 		requestAccepted: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "request_count_accepted",
+			Name: "fn53_reqs_accepted",
 			Help: "Accepted requests",
 		}),
 		requestRejectedByClient: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "request_rejected_by_client",
+			Name: "fn53_reqs_rejected_by_client",
 			Help: "Requests made by clients that are not allowed to do DNS queries",
 		}),
 		requestBlocklisted: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "request_count_blocklisted",
+			Name: "fn53_reqs_blocklisted",
 			Help: "Blocklisted requests (ads/malware etc.)",
 		}),
 		requestDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
-			Name:    "request_duration_seconds",
+			Name:    "fn53_req_duration",
 			Buckets: timeBuckets,
 			Help:    "Histogram of the time (in seconds) each request took.",
 		}),
 		blocklistItems: prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "blocklist_items",
+			Name: "fn53_blocklist_items",
 			Help: "Number of items in the blocklist",
 		}),
 	}
