@@ -116,7 +116,15 @@ func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
 // there's an API in miekg/dns that does this, but it forcefully emits deprecation message
 // to stderr and the design philosophy in the docs hints that we should implement things
 // like these ourselves......
+//
+// NOTE: nil error doesn't mean successful query, but rather that we got query back and there was
+//       no transport-level error
 func dnsRequestResponse(req *dns.Msg, conn net.Conn) (*dns.Msg, error) {
+	// without this, for broken connections queries can be stuck forever (or a long time)
+	if err := conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
+		return nil, err
+	}
+
 	dnsConn := dns.Conn{
 		Conn: conn,
 	}
