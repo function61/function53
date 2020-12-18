@@ -78,6 +78,7 @@ func NewForwarderPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stop
 }
 
 var dnsDialer = net.Dialer{
+	Timeout:   1 * time.Second, // DNS queries are really latency sensitive
 	KeepAlive: 1 * time.Second, // even with this low keepalive, we seem to get disconnects
 }
 
