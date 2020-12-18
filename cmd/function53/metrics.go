@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
+	"github.com/function61/gokit/log/logex"
+	"github.com/function61/gokit/net/http/httputils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -69,31 +70,16 @@ func makeMetrics() *metrics {
 	return metrics
 }
 
-func metricsServer(conf Config, logger *log.Logger, stop *stopper.Stopper) error {
+func metricsServer(ctx context.Context, conf Config, logger *log.Logger) error {
 	http.Handle("/metrics", promhttp.Handler())
 
 	logl := logex.Levels(logger)
 
-	addr := fmt.Sprintf(":%d", conf.MetricsPort)
-
-	srv := http.Server{
-		Addr: addr,
+	srv := &http.Server{
+		Addr: fmt.Sprintf(":%d", conf.MetricsPort),
 	}
 
-	logl.Info.Printf("starting to listen at %s", addr)
+	logl.Info.Printf("starting to listen at %s", srv.Addr)
 
-	go func() {
-		defer stop.Done()
-		defer logl.Info.Println("stopped")
-
-		<-stop.Signal
-
-		srv.Shutdown(nil)
-	}()
-
-	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-		return err
-	}
-
-	return nil
+	return httputils.CancelableServer(ctx, srv, func() error { return srv.ListenAndServe() })
 }

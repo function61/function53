@@ -1,60 +1,45 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
+	"github.com/function61/gokit/log/logex"
+	"github.com/function61/gokit/sync/syncutil"
+	"github.com/function61/gokit/sync/taskrunner"
 	"github.com/miekg/dns"
 )
 
 type DnsQueryHandler struct {
-	ReloadBlocklist chan Blocklist
-	conf            Config
-	forwarderPool   *ForwarderPool
-	queryLogger     QueryLogger
-	blocklist       Blocklist
-	blocklistMu     sync.Mutex
-	metrics         *metrics
-	logl            *logex.Leveled
+	conf          Config
+	forwarderPool *ForwarderPool
+	queryLogger   QueryLogger
+	blocklist     Blocklist
+	blocklistMu   sync.Mutex
+	metrics       *metrics
+	logl          *logex.Leveled
 }
 
 func NewDnsQueryHandler(
 	forwarderPool *ForwarderPool,
 	conf Config,
 	blocklist Blocklist,
-	logger *log.Logger,
 	queryLogger QueryLogger,
-	stop *stopper.Stopper,
+	logger *log.Logger,
 ) *DnsQueryHandler {
 	qh := &DnsQueryHandler{
-		ReloadBlocklist: make(chan Blocklist, 1),
-		conf:            conf,
-		forwarderPool:   forwarderPool,
-		queryLogger:     queryLogger,
-		metrics:         makeMetrics(),
-		logl:            logex.Levels(logger),
+		conf:          conf,
+		forwarderPool: forwarderPool,
+		queryLogger:   queryLogger,
+		metrics:       makeMetrics(),
+		logl:          logex.Levels(logger),
 	}
 
 	// to trigger metrics calculation
 	qh.replaceBlocklist(blocklist)
-
-	go func() {
-		defer stop.Done()
-
-		for {
-			select {
-			case <-stop.Signal:
-				return
-			case blocklist := <-qh.ReloadBlocklist:
-				qh.replaceBlocklist(blocklist)
-			}
-		}
-	}()
 
 	return qh
 }
@@ -134,8 +119,7 @@ func (h *DnsQueryHandler) handleRejection(rw dns.ResponseWriter, req *dns.Msg) {
 }
 
 func (h *DnsQueryHandler) replaceBlocklist(blocklist Blocklist) {
-	h.blocklistMu.Lock()
-	defer h.blocklistMu.Unlock()
+	defer syncutil.LockAndUnlock(&h.blocklistMu)()
 
 	h.blocklist = blocklist
 	h.metrics.blocklistItems.Set(float64(len(blocklist)))
@@ -143,9 +127,7 @@ func (h *DnsQueryHandler) replaceBlocklist(blocklist Blocklist) {
 	h.logl.Info.Printf("Got blocklist with %d item(s)", len(blocklist))
 }
 
-func runServer(handler *DnsQueryHandler, stop *stopper.Stopper) error {
-	defer stop.Done()
-
+func runDnsListener(ctx context.Context, handler *DnsQueryHandler, logger *log.Logger) error {
 	udpHandler := dns.NewServeMux()
 	tcpHandler := dns.NewServeMux()
 	tcpHandler.HandleFunc(".", handler.Handle)
@@ -168,34 +150,21 @@ func runServer(handler *DnsQueryHandler, stop *stopper.Stopper) error {
 		WriteTimeout: 2 * time.Second,
 	}
 
-	serverErrored := make(chan error, 1)
+	tasks := taskrunner.New(ctx, logger)
 
-	once := sync.Once{}
-	serverErroredOnce := func(err error) {
-		once.Do(func() { serverErrored <- err })
-	}
+	tasks.Start("udp", func(ctx context.Context) error { return listenAndServeDns(ctx, udpServer) })
+	tasks.Start("tcp", func(ctx context.Context) error { return listenAndServeDns(ctx, tcpServer) })
 
-	go listenAndServeDns(udpServer, serverErroredOnce)
-	go listenAndServeDns(tcpServer, serverErroredOnce)
-
-	select {
-	case <-stop.Signal:
-		udpServer.Shutdown()
-		tcpServer.Shutdown()
-
-		return nil
-	case err := <-serverErrored:
-		udpServer.Shutdown()
-		tcpServer.Shutdown()
-
-		return err
-	}
+	return tasks.Wait()
 }
 
-func listenAndServeDns(ds *dns.Server, serverErrored func(error)) {
-	if err := ds.ListenAndServe(); err != nil {
-		serverErrored(fmt.Errorf("Start %s listener on %s failed: %v", ds.Net, ds.Addr, err))
-	}
+func listenAndServeDns(ctx context.Context, srv *dns.Server) error {
+	go func() {
+		<-ctx.Done()
+		srv.Shutdown()
+	}()
+
+	return srv.ListenAndServe()
 }
 
 func ipFromAddr(addr net.Addr) string {

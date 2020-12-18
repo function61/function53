@@ -8,14 +8,14 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/function61/gokit/ezhttp"
-	"github.com/function61/gokit/fileexists"
+	"github.com/function61/gokit/net/http/ezhttp"
+	"github.com/function61/gokit/os/atomicfilewrite"
+	"github.com/function61/gokit/os/osutil"
 	"github.com/miekg/dns"
 )
 
 const (
-	blocklistFilename     = "blocklist.txt"
-	blocklistFilenameTemp = "blocklist.txt.temp"
+	blocklistFilename = "blocklist.txt"
 )
 
 type Blocklist map[string]bool
@@ -74,11 +74,11 @@ func blocklistLoadFromDisk() (*Blocklist, error) {
 }
 
 func blocklistExists() (bool, error) {
-	return fileexists.Exists(blocklistFilename)
+	return osutil.Exists(blocklistFilename)
 }
 
-// atomically (temp-file + rename) updates a blocklist to disk
-// https://github.com/jedisct1/dnscrypt-proxy/wiki/Public-blacklists
+// atomically updates a blocklist to disk
+// source: https://github.com/jedisct1/dnscrypt-proxy/wiki/Public-blacklists
 // "Updated daily"
 func blocklistUpdate() error {
 	ctx, cancel := context.WithTimeout(context.TODO(), ezhttp.DefaultTimeout10s)
@@ -91,23 +91,8 @@ func blocklistUpdate() error {
 		return err
 	}
 
-	f, err := os.Create(blocklistFilenameTemp)
-	if err != nil {
+	return atomicfilewrite.Write(blocklistFilename, func(blocklist io.Writer) error {
+		_, err := io.Copy(blocklist, res.Body)
 		return err
-	}
-	defer f.Close()
-
-	if _, err := io.Copy(f, res.Body); err != nil {
-		return err
-	}
-
-	if err := f.Close(); err != nil {
-		return err
-	}
-
-	if err := os.Rename(blocklistFilenameTemp, blocklistFilename); err != nil {
-		return err
-	}
-
-	return nil
+	})
 }

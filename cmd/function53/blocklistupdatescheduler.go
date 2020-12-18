@@ -1,27 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
+	"github.com/function61/gokit/log/logex"
 )
 
-func blocklistUpdateScheduler(logger *log.Logger, reloadBlocklist chan Blocklist, stop *stopper.Stopper) {
+func blocklistUpdateScheduler(ctx context.Context, replacer func(Blocklist), logger *log.Logger) error {
 	logl := logex.Levels(logger)
-
-	defer stop.Done()
-	defer logl.Info.Println("Stopped")
-
-	logl.Info.Println("Started")
 
 	daily := time.NewTicker(24 * time.Hour)
 
 	for {
 		select {
-		case <-stop.Signal:
-			return
+		case <-ctx.Done():
+			return nil
 		case <-daily.C:
 			logl.Info.Println("Time to update blocklist")
 
@@ -36,7 +31,7 @@ func blocklistUpdateScheduler(logger *log.Logger, reloadBlocklist chan Blocklist
 				break
 			}
 
-			reloadBlocklist <- *blocklist
+			replacer(*blocklist)
 
 			logl.Info.Println("Succeeded")
 		}

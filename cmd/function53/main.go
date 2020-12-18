@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/function61/gokit/dynversion"
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/ossignal"
-	"github.com/function61/gokit/stopper"
-	"github.com/function61/gokit/systemdinstaller"
+	"github.com/function61/gokit/log/logex"
+	"github.com/function61/gokit/os/osutil"
+	"github.com/function61/gokit/os/systemdinstaller"
+	"github.com/function61/gokit/sync/taskrunner"
 	"github.com/spf13/cobra"
 )
 
@@ -26,78 +28,79 @@ func main() {
 		Short: "Runs the program",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			mainInternal()
+			rootLogger := logex.StandardLogger()
+
+			osutil.ExitIfError(logic(
+				osutil.CancelOnInterruptOrTerminate(rootLogger),
+				rootLogger))
 		},
 	})
+
 	app.AddCommand(writeSystemdFileEntry())
 	app.AddCommand(writeDefaultConfigEntry())
 
-	if err := app.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	osutil.ExitIfError(app.Execute())
 }
 
-func mainInternal() {
-	rootLogger := logex.StandardLogger()
-
+func logic(ctx context.Context, rootLogger *log.Logger) error {
 	logl := logex.Levels(logex.Prefix("main", rootLogger))
 
 	conf, err := readConfig()
 	if err != nil {
-		logl.Error.Fatalf("readConfig: %v", err)
+		return fmt.Errorf("readConfig: %w", err)
 	}
 
 	blocklist, err := loadBlocklistAndDownloadIfRequired(logl)
 	if err != nil {
-		logl.Error.Fatalf("loadBlocklistAndDownloadIfRequired: %v", err)
+		return fmt.Errorf("loadBlocklistAndDownloadIfRequired: %w", err)
 	}
 
-	var queryLogger QueryLogger
-	if conf.LogQueries {
-		queryLogger = NewLogQueryLogger(logex.Prefix("queryLogger", rootLogger))
-	} else {
-		queryLogger = NewNilQueryLogger()
-	}
-
-	workers := stopper.NewManager()
+	tasks := taskrunner.New(ctx, rootLogger)
 
 	forwarderPool := NewForwarderPool(
 		conf.Endpoints,
-		logex.Prefix("forwarderPool", rootLogger),
-		workers.Stopper())
+		logex.Prefix("forwarderPool", rootLogger))
 
 	dnsHandler := NewDnsQueryHandler(
 		forwarderPool,
 		*conf,
 		*blocklist,
-		logex.Prefix("queryHandler", rootLogger),
-		queryLogger,
-		workers.Stopper())
+		makeQueryLogger(conf.LogQueries, logex.Prefix("queryLogger", rootLogger)),
+		logex.Prefix("queryHandler", rootLogger))
 
-	go func(stop *stopper.Stopper) {
-		if err := runServer(dnsHandler, stop); err != nil {
-			logl.Error.Fatalf("runServer: %v", err)
-		}
-	}(workers.Stopper())
+	tasks.Start("forwarderPool", func(ctx context.Context) error {
+		return forwarderPool.Run(ctx)
+	})
 
-	go func(stop *stopper.Stopper) {
-		if err := metricsServer(*conf, logex.Prefix("metricsServer", rootLogger), stop); err != nil {
-			logl.Error.Fatalf("metricsServer: %v", err)
-		}
-	}(workers.Stopper())
+	tasks.Start("dnsListener", func(ctx context.Context) error {
+		return runDnsListener(ctx, dnsHandler, logex.Prefix("dnsListener", rootLogger))
+	})
+
+	tasks.Start("metricsServer", func(ctx context.Context) error {
+		return metricsServer(ctx, *conf, logex.Prefix("metricsServer", rootLogger))
+	})
 
 	if conf.BlocklistEnableUpdates {
-		go blocklistUpdateScheduler(
-			logex.Prefix("blocklistUpdateScheduler", rootLogger),
-			dnsHandler.ReloadBlocklist,
-			workers.Stopper())
+		replacer := func(blockList Blocklist) {
+			dnsHandler.replaceBlocklist(blockList)
+		}
+
+		tasks.Start("blocklistUpdateScheduler", func(ctx context.Context) error {
+			return blocklistUpdateScheduler(ctx, replacer, logex.Prefix("blocklistUpdateScheduler", rootLogger))
+		})
 	}
 
 	logl.Info.Printf("Started %s", dynversion.Version)
-	logl.Info.Printf("Got %s; stopping", <-ossignal.InterruptOrTerminate())
 
-	workers.StopAllWorkersAndWait()
+	return tasks.Wait()
+}
+
+func makeQueryLogger(shouldLog bool, logger *log.Logger) QueryLogger {
+	if shouldLog {
+		return NewLogQueryLogger(logger)
+	} else {
+		return NewNilQueryLogger()
+	}
 }
 
 func loadBlocklistAndDownloadIfRequired(logl *logex.Leveled) (*Blocklist, error) {
@@ -124,17 +127,28 @@ func loadBlocklistAndDownloadIfRequired(logl *logex.Leveled) (*Blocklist, error)
 }
 
 func writeSystemdFileEntry() *cobra.Command {
+	install := func() error {
+		service := systemdinstaller.SystemdServiceFile(
+			"function53",
+			tagline,
+			systemdinstaller.Args("run"),
+			systemdinstaller.Docs("https://github.com/function61/function53"))
+
+		if err := systemdinstaller.Install(service); err != nil {
+			return err
+		}
+
+		fmt.Println(systemdinstaller.GetHints(service))
+
+		return nil
+	}
+
 	return &cobra.Command{
 		Use:   "write-systemd-unit-file",
 		Short: "Install unit file to start this application on startup",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
-			systemdHints, err := systemdinstaller.InstallSystemdServiceFile("function53", []string{"run"}, tagline)
-			if err != nil {
-				panic(err)
-			}
-
-			fmt.Println(systemdHints)
+			osutil.ExitIfError(install())
 		},
 	}
 }

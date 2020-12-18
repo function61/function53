@@ -7,9 +7,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
-	"github.com/function61/gokit/throttle"
+	"github.com/function61/gokit/app/throttle"
+	"github.com/function61/gokit/log/logex"
 	"github.com/miekg/dns"
 )
 
@@ -39,42 +38,40 @@ type ForwarderPool struct {
 	logl                  *logex.Leveled
 }
 
-func NewForwarderPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stopper.Stopper) *ForwarderPool {
+func NewForwarderPool(endpoints []ServerEndpoint, logger *log.Logger) *ForwarderPool {
 	pool := &ForwarderPool{
 		Jobs:                  make(chan *Job, 16),
 		Reconnect:             make(chan ServerEndpoint, len(endpoints)),
-		tlsClientSessionCache: tls.NewLRUClientSessionCache(0),
+		tlsClientSessionCache: tls.NewLRUClientSessionCache(0), // TODO: why?
 		logl:                  logex.Levels(logger),
 	}
 
-	for _, endpoint := range endpoints {
+	for _, endpoint := range endpoints { // initial connections as "reconnects"
 		pool.Reconnect <- endpoint
 	}
 
-	go func() {
-		defer stop.Done()
-		defer pool.logl.Info.Println("Stopped")
-
-		twoTimesASecond, cancel := throttle.BurstThrottler(2, 1*time.Second)
-		defer cancel()
-
-		// this loop will reconnect all broken connections
-		for {
-			select {
-			case endpoint := <-pool.Reconnect:
-				twoTimesASecond(func() {
-					pool.logl.Info.Printf("Reconnecting to %s", endpoint.Addr)
-
-					go endpointWorker(endpoint, pool)
-				})
-			case <-stop.Signal:
-				return
-			}
-
-		}
-	}()
-
 	return pool
+}
+
+func (f *ForwarderPool) Run(ctx context.Context) error {
+	twoTimesASecond, cancel := throttle.BurstThrottler(2, 1*time.Second)
+	defer cancel()
+
+	// this loop will:
+	// - reconnect all broken connections
+	// - start initial connections
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case endpoint := <-f.Reconnect:
+			twoTimesASecond(func() {
+				f.logl.Info.Printf("Reconnecting to %s", endpoint.Addr)
+
+				go f.endpointWorker(endpoint)
+			})
+		}
+	}
 }
 
 var dnsDialer = net.Dialer{
@@ -83,11 +80,11 @@ var dnsDialer = net.Dialer{
 }
 
 // inspired by: https://github.com/artyom/dot
-func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
+func (f *ForwarderPool) endpointWorker(endpoint ServerEndpoint) {
 	reconnect := func(err error) {
-		pool.logl.Error.Printf("Endpoint %s failed: %v", endpoint.Addr, err)
+		f.logl.Error.Printf("Endpoint %s failed: %v", endpoint.Addr, err)
 
-		pool.Reconnect <- endpoint
+		f.Reconnect <- endpoint
 	}
 
 	tcpConn, err := dnsDialer.DialContext(context.TODO(), "tcp", endpoint.Addr)
@@ -98,14 +95,14 @@ func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
 
 	tlsConn := tls.Client(tcpConn, &tls.Config{
 		ServerName:         endpoint.ServerName,
-		ClientSessionCache: pool.tlsClientSessionCache,
+		ClientSessionCache: f.tlsClientSessionCache,
 	})
 
-	for job := range pool.Jobs {
+	for job := range f.Jobs {
 		resp, err := dnsRequestResponse(job.Request, tlsConn)
 		if err != nil {
 			reconnect(err)
-			pool.Jobs <- job // FIXME: this has the potential to deadlock
+			f.Jobs <- job // FIXME: this has the potential to deadlock
 			return
 		}
 

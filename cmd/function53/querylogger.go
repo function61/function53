@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/function61/gokit/logex"
+	"github.com/function61/gokit/log/logex"
 )
 
 type QueryLogger interface {

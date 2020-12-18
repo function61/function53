@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/function61/gokit/jsonfile"
+	"github.com/function61/gokit/encoding/jsonfile"
 	"github.com/spf13/cobra"
 )
 

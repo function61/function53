@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/function61/gokit/assert"
+	"github.com/function61/gokit/testing/assert"
 )
 
 func TestFoo(t *testing.T) {
