@@ -128,43 +128,35 @@ func (h *DnsQueryHandler) replaceBlocklist(blocklist Blocklist) {
 }
 
 func runDnsListener(ctx context.Context, handler *DnsQueryHandler, logger *log.Logger) error {
-	udpHandler := dns.NewServeMux()
-	tcpHandler := dns.NewServeMux()
-	tcpHandler.HandleFunc(".", handler.Handle)
-	udpHandler.HandleFunc(".", handler.Handle)
+	listenAndServeDns := func(ctx context.Context, network string) error {
+		srv := &dns.Server{
+			Addr:         "0.0.0.0:53",
+			Net:          network,
+			Handler:      dns.HandlerFunc(handler.Handle),
+			UDPSize:      65535,
+			ReadTimeout:  2 * time.Second,
+			WriteTimeout: 2 * time.Second,
+		}
 
-	tcpServer := &dns.Server{
-		Addr:         "0.0.0.0:53",
-		Net:          "tcp",
-		Handler:      tcpHandler,
-		ReadTimeout:  2 * time.Second,
-		WriteTimeout: 2 * time.Second,
-	}
+		go func() {
+			<-ctx.Done()
+			srv.Shutdown()
+		}()
 
-	udpServer := &dns.Server{
-		Addr:         "0.0.0.0:53",
-		Net:          "udp",
-		Handler:      udpHandler,
-		UDPSize:      65535,
-		ReadTimeout:  2 * time.Second,
-		WriteTimeout: 2 * time.Second,
+		return srv.ListenAndServe()
 	}
 
 	tasks := taskrunner.New(ctx, logger)
 
-	tasks.Start("udp", func(ctx context.Context) error { return listenAndServeDns(ctx, udpServer) })
-	tasks.Start("tcp", func(ctx context.Context) error { return listenAndServeDns(ctx, tcpServer) })
+	tasks.Start("udp", func(ctx context.Context) error {
+		return listenAndServeDns(ctx, "udp")
+	})
+
+	tasks.Start("tcp", func(ctx context.Context) error {
+		return listenAndServeDns(ctx, "tcp")
+	})
 
 	return tasks.Wait()
-}
-
-func listenAndServeDns(ctx context.Context, srv *dns.Server) error {
-	go func() {
-		<-ctx.Done()
-		srv.Shutdown()
-	}()
-
-	return srv.ListenAndServe()
 }
 
 func ipFromAddr(addr net.Addr) string {
