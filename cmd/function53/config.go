@@ -46,7 +46,16 @@ func defaultConfig() Config {
 
 func readConfig() (*Config, error) {
 	conf := &Config{}
-	return conf, jsonfile.Read(configFilePath, conf, true)
+	if err := jsonfile.Read(configFilePath, conf, true); err != nil {
+		return nil, err
+	}
+
+	// make it so that rest of code can assume that this is present
+	if conf.DefaultOverridableConfig == nil {
+		conf.DefaultOverridableConfig = &OverridableConfig{}
+	}
+
+	return conf, nil
 }
 
 func writeConfig(conf Config) error {
