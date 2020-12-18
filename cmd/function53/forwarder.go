@@ -112,10 +112,13 @@ func (f *ForwarderPool) endpointWorker(endpoint ServerEndpoint) {
 
 // there's an API in miekg/dns that does this, but it forcefully emits deprecation message
 // to stderr and the design philosophy in the docs hints that we should implement things
-// like these ourselves......
+// like these ourselves... https://github.com/miekg/dns/blob/428cef31872d7aee10c55a9450929bc9b645b292/client.go#L387
 //
 // NOTE: nil error doesn't mean successful query, but rather that we got query back and there was
 //       no transport-level error
+//
+// TODO: use one of the client.ExchangeConn() methods in dns so we don't have to do this ourself,
+//       but pay attention to in-flight logic, if this is to be used for parallel queries (currently isn't)
 func dnsRequestResponse(req *dns.Msg, conn net.Conn) (*dns.Msg, error) {
 	// without this, for broken connections queries can be stuck forever (or a long time)
 	if err := conn.SetDeadline(time.Now().Add(2 * time.Second)); err != nil {
