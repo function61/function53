@@ -26,22 +26,22 @@ type DnsQueryHandler struct {
 func NewDnsQueryHandler(
 	forwarderPool *ForwarderPool,
 	conf Config,
-	blocklist Blocklist,
 	queryLogger QueryLogger,
 	logger *log.Logger,
 ) *DnsQueryHandler {
-	qh := &DnsQueryHandler{
+	h := &DnsQueryHandler{
 		conf:          conf,
 		forwarderPool: forwarderPool,
 		queryLogger:   queryLogger,
+		blocklist:     Blocklist{}, // start with empty
 		metrics:       makeMetrics(),
 		logl:          logex.Levels(logger),
 	}
 
-	// to trigger metrics calculation
-	qh.replaceBlocklist(blocklist)
+	// to trigger initial metrics calculation
+	h.replaceBlocklist(h.blocklist)
 
-	return qh
+	return h
 }
 
 func (h *DnsQueryHandler) Handle(rw dns.ResponseWriter, req *dns.Msg) {

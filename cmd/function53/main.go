@@ -50,11 +50,6 @@ func logic(ctx context.Context, rootLogger *log.Logger) error {
 		return fmt.Errorf("readConfig: %w", err)
 	}
 
-	blocklist, err := loadBlocklistAndDownloadIfRequired(logl)
-	if err != nil {
-		return fmt.Errorf("loadBlocklistAndDownloadIfRequired: %w", err)
-	}
-
 	tasks := taskrunner.New(ctx, rootLogger)
 
 	forwarderPool := NewForwarderPool(
@@ -64,7 +59,6 @@ func logic(ctx context.Context, rootLogger *log.Logger) error {
 	dnsHandler := NewDnsQueryHandler(
 		forwarderPool,
 		*conf,
-		*blocklist,
 		makeQueryLogger(conf.LogQueries, logex.Prefix("queryLogger", rootLogger)),
 		logex.Prefix("queryHandler", rootLogger))
 
@@ -81,13 +75,19 @@ func logic(ctx context.Context, rootLogger *log.Logger) error {
 	})
 
 	if !conf.BlocklistDisableUpdates {
-		replacer := func(blockList Blocklist) {
-			dnsHandler.replaceBlocklist(blockList)
-		}
-
 		tasks.Start("blocklistUpdateScheduler", func(ctx context.Context) error {
-			return blocklistUpdateScheduler(ctx, replacer, logex.Prefix("blocklistUpdateScheduler", rootLogger))
+			return blocklistUpdateScheduler(ctx, func(blockList Blocklist) {
+				dnsHandler.replaceBlocklist(blockList)
+			}, logex.Prefix("blocklistUpdateScheduler", rootLogger))
 		})
+	}
+
+	blocklist, err := loadBlocklistAndDownloadIfRequired(logl)
+	if err != nil {
+		// can't fail-by-stopping here, because blocklist downloading might depend on *our* DNS not being up
+		logl.Error.Printf("loadBlocklistAndDownloadIfRequired: %v", err)
+	} else {
+		dnsHandler.replaceBlocklist(*blocklist)
 	}
 
 	logl.Info.Printf("Started %s", dynversion.Version)
