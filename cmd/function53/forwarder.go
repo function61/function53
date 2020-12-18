@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
-	"github.com/function61/gokit/tcpkeepalive"
-	"github.com/function61/gokit/throttle"
-	"github.com/miekg/dns"
 	"log"
 	"net"
 	"time"
+
+	"github.com/function61/gokit/logex"
+	"github.com/function61/gokit/stopper"
+	"github.com/function61/gokit/throttle"
+	"github.com/miekg/dns"
 )
 
 type Job struct {

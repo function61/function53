@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/function61/gokit/assert"
 	"strings"
 	"testing"
+
+	"github.com/function61/gokit/assert"
 )
 
 func TestFoo(t *testing.T) {

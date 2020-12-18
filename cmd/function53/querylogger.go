@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/function61/gokit/logex"
 	"log"
+
+	"github.com/function61/gokit/logex"
 )
 
 type QueryLogger interface {

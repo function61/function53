@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
 	"log"
 	"time"
+
+	"github.com/function61/gokit/logex"
+	"github.com/function61/gokit/stopper"
 )
 
 func blocklistUpdateScheduler(logger *log.Logger, reloadBlocklist chan Blocklist, stop *stopper.Stopper) {

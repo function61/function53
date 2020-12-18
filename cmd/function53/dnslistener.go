@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/function61/gokit/logex"
-	"github.com/function61/gokit/stopper"
-	"github.com/miekg/dns"
 	"log"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/function61/gokit/logex"
+	"github.com/function61/gokit/stopper"
+	"github.com/miekg/dns"
 )
 
 type DnsQueryHandler struct {

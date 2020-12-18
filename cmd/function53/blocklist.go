@@ -3,13 +3,14 @@ package main
 import (
 	"bufio"
 	"context"
-	"github.com/function61/gokit/ezhttp"
-	"github.com/function61/gokit/fileexists"
-	"github.com/miekg/dns"
 	"io"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/function61/gokit/ezhttp"
+	"github.com/function61/gokit/fileexists"
+	"github.com/miekg/dns"
 )
 
 const (
