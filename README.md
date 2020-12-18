@@ -25,17 +25,21 @@ I wanted these features:
 
 And here's the alternatives' feature matrix:
 
-| Project        | Ad blocking | Encrypted DNS | Metrics | Latency metrics | Clean install | Not using PHP |
+| Project        | Ad blocking | Encrypted DNS | Metrics | Latency distribution metrics | Clean install | Reasonable programming language |
 |----------------|-------------|---------------|---------|-----------------|---------------|---------------|
-| function53     | x           | x             | x       | x               | x             | x             |
-| dnscrypt-proxy | x           | x             |         |                 | x             | x             |
-| coredns        |             | x             | x       | x               | x             | x             |
-| pihole         | x           | Manual config | x       |                 |               |               |
+| function53     | ✓           | ✓             | ✓       | ✓               | ✓             | ✓ (Go)        |
+| dnscrypt-proxy | ✓           | ✓             | [Not coming](https://github.com/jedisct1/dnscrypt-pro✓y/issues/337) |   | ✓ | ✓ (Go) |
+| coredns        |             | ✓             | ✓       | ✓               | ✓             | ✓ (Go) |
+| pihole         | ✓           | Manual config | [Plugin](https://github.com/eko/pihole-exporter)  |              | No | No (PHP) |
+| AdGuard        | ✓           | ✓             | [Not yet](https://github.com/AdguardTeam/AdGuardHome/issues/516) | No |   | ✓ (Go) |
 
-Metrics for dnscrypt-proxy [may not ever be coming](https://github.com/jedisct1/dnscrypt-proxy/issues/337).
+Definitions:
 
-I define "clean install" as minimal changes to the system. Pi-hole needs so many dependencies,
-and even the Docker image for Pi-hole looks too complicated.
+| Term          | Definition                    |
+|---------------|-------------------------------|
+| Metrics       | Prometheus-compatible metrics |
+| Clean install | Minimal changes to the system (Pi-hole needs so many dependencies, and even the Docker image for Pi-hole looks too complicated.) |
+| Reasonable programming language | Uses memory safe, typed programming language |
 
 I also had [reliability problems with dnscrypt-proxy](https://github.com/coredns/coredns/issues/2267#issuecomment-450131975).
 
