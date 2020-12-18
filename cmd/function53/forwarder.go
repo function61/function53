@@ -105,7 +105,7 @@ func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
 		resp, err := dnsRequestResponse(job.Request, tlsConn)
 		if err != nil {
 			reconnect(err)
-			pool.Jobs <- job
+			pool.Jobs <- job // FIXME: this has the potential to deadlock
 			return
 		}
 
