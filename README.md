@@ -20,9 +20,9 @@ The below features were important to me, so let's compare what's available:
 | Project        | Ad blocking | Encrypted DNS | Metrics | Query latencies | Clean install | Reasonable programming language |
 |----------------|-------------|---------------|---------|-----------------|---------------|---------------|
 | function53     | ✓           | ✓             | ✓       | ✓               | ✓             | ✓ (Go)        |
-| dnscrypt-proxy | ✓           | ✓             | [Not coming](https://github.com/jedisct1/dnscrypt-pro✓y/issues/337) |   | ✓ | ✓ (Go) |
-| coredns        |             | ✓             | ✓       | ✓               | ✓             | ✓ (Go) |
-| pihole         | ✓           | Manual config | [Plugin](https://github.com/eko/pihole-exporter)  |              | No (average latency, but no distribution) | No (PHP) |
+| dnscrypt-proxy | ✓           | ✓             | [Not coming](https://github.com/jedisct1/dnscrypt-pro✓y/issues/337) | No | ✓ | ✓ (Go) |
+| coredns        | [Maybe coming](https://github.com/coredns/coredns/issues/2267) | ✓             | ✓       | ✓               | ✓             | ✓ (Go) |
+| pihole         | ✓           | [Manual config](https://docs.pi-hole.net/guides/dns-over-https/) | [Plugin](https://github.com/eko/pihole-exporter)  | No (average latency, but no distribution) | No | No (PHP) |
 | AdGuard        | ✓           | ✓             | [Not yet](https://github.com/AdguardTeam/AdGuardHome/issues/516) | No (average latency, but no distribution) | ✓ | ✓ (Go) |
 
 Definitions:
@@ -40,6 +40,24 @@ I also had [reliability problems with dnscrypt-proxy](https://github.com/coredns
 
 How to install
 --------------
+
+### Docker
+
+```console
+$ docker run -d \
+	--name function53 \
+	--restart always \
+	--net host \
+	fn61/function53:TAG
+```
+
+Note:
+
+- You can find the tag from Docker Hub
+- It starts with reasonable default config. If you want to customize it, add `-v /home/pi/function53/config.json:/function53/config.json` to `$ docker run ..`
+
+
+### Manual install
 
 This assumes you're using Raspberry Pi. The URL is different for amd64.
 

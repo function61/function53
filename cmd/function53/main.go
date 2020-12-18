@@ -80,7 +80,7 @@ func logic(ctx context.Context, rootLogger *log.Logger) error {
 		return metricsServer(ctx, *conf, logex.Prefix("metricsServer", rootLogger))
 	})
 
-	if conf.BlocklistEnableUpdates {
+	if !conf.BlocklistDisableUpdates {
 		replacer := func(blockList Blocklist) {
 			dnsHandler.replaceBlocklist(blockList)
 		}

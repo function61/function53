@@ -10,10 +10,13 @@ ARG TARGETVARIANT
 
 ENTRYPOINT ["function53"]
 
-CMD ["run"]
+WORKDIR /function53
 
-RUN apk add --update ca-certificates
+CMD ["run"]
 
 COPY "rel/function53_linux-$TARGETARCH" /bin/function53
 
-
+# the 'write-default-config' writes /function53/config.json file with some reasonable defaults, so
+# the image should be usable as-is
+RUN apk add --update ca-certificates \
+	&& function53 write-default-config

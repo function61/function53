@@ -25,8 +25,8 @@ func NewJob(req *dns.Msg) *Job {
 }
 
 type ServerEndpoint struct {
-	ServerName string
-	Addr       string
+	ServerName string `json:"server_name"` // needed for TLS certificate validation
+	Addr       string `json:"addr"`        // must be IP address, because otherwise there's chicken-egg problem
 }
 
 // forwards requests (in encrypted form) to DNS server endpoints which will actually
