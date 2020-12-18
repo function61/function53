@@ -77,6 +77,10 @@ func NewForwarderPool(endpoints []ServerEndpoint, logger *log.Logger, stop *stop
 	return pool
 }
 
+var dnsDialer = net.Dialer{
+	KeepAlive: 1 * time.Second, // even with this low keepalive, we seem to get disconnects
+}
+
 // inspired by: https://github.com/artyom/dot
 func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
 	reconnect := func(err error) {
@@ -85,15 +89,10 @@ func endpointWorker(endpoint ServerEndpoint, pool *ForwarderPool) {
 		pool.Reconnect <- endpoint
 	}
 
-	var d net.Dialer
-	tcpConn, err := d.DialContext(context.TODO(), "tcp", endpoint.Addr)
+	tcpConn, err := dnsDialer.DialContext(context.TODO(), "tcp", endpoint.Addr)
 	if err != nil {
 		reconnect(err)
 		return
-	}
-
-	if err := tcpkeepalive.Enable(tcpConn.(*net.TCPConn), 1*time.Second); err != nil {
-		pool.logl.Error.Printf("tcpkeepalive: %v", err)
 	}
 
 	tlsConn := tls.Client(tcpConn, &tls.Config{
