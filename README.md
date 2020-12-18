@@ -1,5 +1,5 @@
-[![Build Status](https://img.shields.io/travis/function61/function53.svg?style=for-the-badge)](https://travis-ci.org/function61/function53)
-[![Download](https://img.shields.io/bintray/v/function61/dl/function53.svg?style=for-the-badge&label=Download)](https://bintray.com/function61/dl/function53/_latestVersion#files)
+![Build status](https://github.com/function61/function53/workflows/Build/badge.svg)
+[![Download](https://img.shields.io/github/downloads/function61/function53/total.svg?style=for-the-badge)](https://github.com/function61/function53/releases)
 
 What
 ----
