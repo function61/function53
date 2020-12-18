@@ -1,5 +1,6 @@
 ![Build status](https://github.com/function61/function53/workflows/Build/badge.svg)
 [![Download](https://img.shields.io/github/downloads/function61/function53/total.svg?style=for-the-badge)](https://github.com/function61/function53/releases)
+[![Download](https://img.shields.io/docker/pulls/fn61/function53.svg?style=for-the-badge)](https://hub.docker.com/r/fn61/function53/)
 
 What
 ----
