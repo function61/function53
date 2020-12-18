@@ -28,7 +28,14 @@
 			]
 		}
 	],
-	"docker_images": [],
+	"docker_images": [
+		{
+			"image": "fn61/function53",
+			"dockerfile_path": "Dockerfile",
+			"platforms": ["linux/amd64", "linux/arm/v7"],
+			"auth_type": "creds_from_env"
+		}
+	],
 	"os_arches": {
 		"linux-amd64": true,
 		"linux-arm": true,
