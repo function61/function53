@@ -140,7 +140,7 @@ func runDnsListener(ctx context.Context, handler *DnsQueryHandler, logger *log.L
 
 		go func() {
 			<-ctx.Done()
-			srv.Shutdown()
+			_ = srv.Shutdown()
 		}()
 
 		return srv.ListenAndServe()
