@@ -12,33 +12,27 @@ Designed to work on Raspberry Pi (much like Pi-hole), but works elsewhere as wel
 ![](docs/metrics.png)
 
 
-Why
----
+Why?
+----
 
-I wanted these features:
+The below features were important to me, so let's compare what's available:
 
-- Ad blocking
-- Encrypted DNS (DoH or DoT)
-- Operational metrics
-- Metrics should include query latencies
-- Clean install with single binary
-
-And here's the alternatives' feature matrix:
-
-| Project        | Ad blocking | Encrypted DNS | Metrics | Latency distribution metrics | Clean install | Reasonable programming language |
+| Project        | Ad blocking | Encrypted DNS | Metrics | Query latencies | Clean install | Reasonable programming language |
 |----------------|-------------|---------------|---------|-----------------|---------------|---------------|
 | function53     | ✓           | ✓             | ✓       | ✓               | ✓             | ✓ (Go)        |
 | dnscrypt-proxy | ✓           | ✓             | [Not coming](https://github.com/jedisct1/dnscrypt-pro✓y/issues/337) |   | ✓ | ✓ (Go) |
 | coredns        |             | ✓             | ✓       | ✓               | ✓             | ✓ (Go) |
-| pihole         | ✓           | Manual config | [Plugin](https://github.com/eko/pihole-exporter)  |              | No | No (PHP) |
-| AdGuard        | ✓           | ✓             | [Not yet](https://github.com/AdguardTeam/AdGuardHome/issues/516) | No |   | ✓ (Go) |
+| pihole         | ✓           | Manual config | [Plugin](https://github.com/eko/pihole-exporter)  |              | No (average latency, but no distribution) | No (PHP) |
+| AdGuard        | ✓           | ✓             | [Not yet](https://github.com/AdguardTeam/AdGuardHome/issues/516) | No (average latency, but no distribution) | ✓ | ✓ (Go) |
 
 Definitions:
 
-| Term          | Definition                    |
-|---------------|-------------------------------|
-| Metrics       | Prometheus-compatible metrics |
-| Clean install | Minimal changes to the system (Pi-hole needs so many dependencies, and even the Docker image for Pi-hole looks too complicated.) |
+| Term            | Definition                    |
+|-----------------|-------------------------------|
+| Encrypted DNS   | DoH (DNS-over-HTTP) or DoT (DNS-over-TLS, i.e. TCP-flavoured DNS but over TLS) |
+| Metrics         | Prometheus-compatible metrics (some projects might have built-in-only metrics, but that's not enough) |
+| Query latencies | Metrics should include query latency distribution |
+| Clean install   | Minimal changes to the system, preferably single binary (Pi-hole needs so many dependencies, and even the Docker image for Pi-hole looks too complicated.) |
 | Reasonable programming language | Uses memory safe, typed programming language |
 
 I also had [reliability problems with dnscrypt-proxy](https://github.com/coredns/coredns/issues/2267#issuecomment-450131975).
